@@ -15,3 +15,7 @@ class IncompleteCheckInError(DomainError):
 
 class CheckInAlreadySubmittedError(DomainError):
     """A submitted check-in is immutable and cannot be changed or submitted again."""
+
+
+class NaiveDatetimeError(DomainError):
+    """A timezone-naive datetime was supplied where an aware one is required."""
