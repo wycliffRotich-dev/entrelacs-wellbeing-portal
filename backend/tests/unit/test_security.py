@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import jwt
@@ -7,7 +7,7 @@ import pytest
 from app.infrastructure.security.passwords import hash_password, verify_password
 from app.infrastructure.security.tokens import TokenError, TokenService
 
-NOW = datetime(2026, 10, 5, 9, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 5, 9, 0, tzinfo=UTC)
 SECRET = "s" * 64
 
 

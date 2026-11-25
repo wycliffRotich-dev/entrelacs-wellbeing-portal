@@ -1,14 +1,17 @@
 """PostgreSQL repository. Every read is tenant-scoped; the caller owns the transaction."""
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
-import psycopg
+from psycopg.errors import UniqueViolation
 
+from app.application.errors import ConcurrentDraftError
 from app.domain.check_ins.check_in import CheckIn, CheckInStatus
 from app.domain.exceptions.errors import CheckInAlreadySubmittedError
 from app.domain.users import Role, User
 from app.domain.wellbeing.aggregation import SubmittedRecord
+from app.infrastructure.persistence.connection import DictConnection
 
 _CHECK_IN_COLUMNS = (
     "id, employee_id, organization_id, team_id, connectedness, support, workload,"
@@ -32,7 +35,7 @@ where check_ins.status = 'DRAFT'
 """
 
 
-def _to_user(row: dict) -> User:
+def _to_user(row: dict[str, Any]) -> User:
     return User(
         id=row["id"],
         organization_id=row["organization_id"],
@@ -43,7 +46,7 @@ def _to_user(row: dict) -> User:
     )
 
 
-def _to_check_in(row: dict) -> CheckIn:
+def _to_check_in(row: dict[str, Any]) -> CheckIn:
     return CheckIn(
         id=row["id"],
         employee_id=row["employee_id"],
@@ -60,8 +63,12 @@ def _to_check_in(row: dict) -> CheckIn:
     )
 
 
+def _lock(for_update: bool) -> str:
+    return " for update" if for_update else ""
+
+
 class PostgresRepository:
-    def __init__(self, conn: psycopg.Connection) -> None:
+    def __init__(self, conn: DictConnection) -> None:
         self._conn = conn
 
     # --- users ---------------------------------------------------------------------------
@@ -82,17 +89,20 @@ class PostgresRepository:
         return _to_user(row) if row else None
 
     # --- check-ins (always scoped to the owning employee) --------------------------------
-    def find_draft(self, employee_id: UUID) -> CheckIn | None:
+    def find_draft(self, employee_id: UUID, *, for_update: bool = False) -> CheckIn | None:
         row = self._conn.execute(
             f"select {_CHECK_IN_COLUMNS} from check_ins"
-            " where employee_id = %s and status = 'DRAFT'",
+            " where employee_id = %s and status = 'DRAFT'" + _lock(for_update),
             (employee_id,),
         ).fetchone()
         return _to_check_in(row) if row else None
 
-    def find_by_id_for_employee(self, check_in_id: UUID, employee_id: UUID) -> CheckIn | None:
+    def find_by_id_for_employee(
+        self, check_in_id: UUID, employee_id: UUID, *, for_update: bool = False
+    ) -> CheckIn | None:
         row = self._conn.execute(
-            f"select {_CHECK_IN_COLUMNS} from check_ins where id = %s and employee_id = %s",
+            f"select {_CHECK_IN_COLUMNS} from check_ins where id = %s and employee_id = %s"
+            + _lock(for_update),
             (check_in_id, employee_id),
         ).fetchone()
         return _to_check_in(row) if row else None
@@ -107,6 +117,13 @@ class PostgresRepository:
         return _to_check_in(row) if row else None
 
     def save(self, check_in: CheckIn) -> None:
+        """Persist a draft. A racing first save surfaces as ConcurrentDraftError."""
+        try:
+            self._save(check_in)
+        except UniqueViolation as exc:
+            raise ConcurrentDraftError("a draft already exists for this employee") from exc
+
+    def _save(self, check_in: CheckIn) -> None:
         """Insert or update a DRAFT row. A row that is already SUBMITTED is never touched."""
         cur = self._conn.execute(
             _UPSERT_CHECK_IN,
@@ -145,6 +162,7 @@ class PostgresRepository:
             " and (%s::uuid is null or team_id = %s)",
             (organization_id, team_id, team_id),
         ).fetchone()
+        assert row is not None  # count(*) always yields a row
         return int(row["n"])
 
     def team_in_organization(self, team_id: UUID, organization_id: UUID) -> bool:
@@ -153,3 +171,16 @@ class PostgresRepository:
             (team_id, organization_id),
         ).fetchone()
         return row is not None
+
+    def commit(self) -> None:
+        self._conn.commit()
+
+    def list_teams(self, organization_id: UUID) -> list[tuple[UUID, str]]:
+        rows = self._conn.execute(
+            "select id, name from teams where organization_id = %s order by name",
+            (organization_id,),
+        ).fetchall()
+        return [(r["id"], r["name"]) for r in rows]
+
+    def rollback(self) -> None:
+        self._conn.rollback()

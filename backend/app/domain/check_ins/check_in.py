@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 from app.domain.check_ins.answers import validate_answer
@@ -12,7 +12,7 @@ from app.domain.check_ins.score import calculate_score
 from app.domain.exceptions.errors import CheckInAlreadySubmittedError, IncompleteCheckInError
 
 
-class CheckInStatus(str, Enum):
+class CheckInStatus(StrEnum):
     DRAFT = "DRAFT"
     SUBMITTED = "SUBMITTED"
 

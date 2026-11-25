@@ -1,5 +1,5 @@
 from dataclasses import fields
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import uuid4
 
@@ -8,7 +8,6 @@ import pytest
 from app.domain.exceptions.errors import NaiveDatetimeError
 from app.domain.wellbeing.aggregation import MIN_RESPONDENTS, SubmittedRecord, summarize
 
-UTC = timezone.utc
 OCT = datetime(2026, 10, 1, tzinfo=UTC)
 MID = datetime(2026, 10, 15, 12, 0, tzinfo=UTC)
 

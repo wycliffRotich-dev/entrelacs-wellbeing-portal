@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import psycopg
 import pytest
 
-NOW = datetime(2026, 10, 5, 9, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 5, 9, 0, tzinfo=UTC)
 
 
 def insert_org(cur):

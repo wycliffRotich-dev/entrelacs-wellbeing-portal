@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import uuid4
 
@@ -11,9 +11,9 @@ from app.domain.exceptions.errors import (
     InvalidAnswerError,
 )
 
-T0 = datetime(2026, 10, 5, 9, 0, tzinfo=timezone.utc)
-T1 = datetime(2026, 10, 5, 9, 30, tzinfo=timezone.utc)
-T2 = datetime(2026, 10, 5, 10, 0, tzinfo=timezone.utc)
+T0 = datetime(2026, 10, 5, 9, 0, tzinfo=UTC)
+T1 = datetime(2026, 10, 5, 9, 30, tzinfo=UTC)
+T2 = datetime(2026, 10, 5, 10, 0, tzinfo=UTC)
 
 
 def new_draft():

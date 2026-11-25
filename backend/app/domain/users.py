@@ -1,10 +1,10 @@
 """User identity as the domain sees it. Role and tenant are always loaded from the database."""
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     EMPLOYEE = "EMPLOYEE"
     HR = "HR"
 

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
@@ -12,8 +12,8 @@ from app.domain.exceptions.errors import CheckInAlreadySubmittedError
 from app.infrastructure.persistence.repositories import PostgresRepository
 
 ROOT = Path(__file__).resolve().parents[3]
-T0 = datetime(2026, 10, 5, 9, 0, tzinfo=timezone.utc)
-T1 = datetime(2026, 10, 6, 9, 0, tzinfo=timezone.utc)
+T0 = datetime(2026, 10, 5, 9, 0, tzinfo=UTC)
+T1 = datetime(2026, 10, 6, 9, 0, tzinfo=UTC)
 
 
 @pytest.fixture
@@ -41,8 +41,8 @@ def seed(conn):
     for o in (org, other_org):
         cur.execute("insert into organizations (id, name) values (%s, %s)", (o, f"org-{o}"))
     team, team2, other_team = uuid4(), uuid4(), uuid4()
-    for t, o in ((team, org), (team2, org), (other_team, other_org)):
-        cur.execute("insert into teams (id, organization_id, name) values (%s, %s, %s)", (t, o, f"t-{t}"))
+    for tid, oid in ((team, org), (team2, org), (other_team, other_org)):
+        cur.execute("insert into teams (id, organization_id, name) values (%s, %s, %s)", (tid, oid, f"t-{tid}"))
     users = {}
     for key, o, t, role in (
         ("emp1", org, team, "EMPLOYEE"), ("emp2", org, team, "EMPLOYEE"),
