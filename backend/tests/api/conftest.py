@@ -4,13 +4,13 @@ from uuid import uuid4
 
 import psycopg
 import pytest
-from app.main import create_app
 from fastapi.testclient import TestClient
 from psycopg.rows import dict_row
 
 from app.domain.check_ins.score import calculate_score
 from app.infrastructure.security.passwords import hash_password
 from app.infrastructure.security.tokens import TokenService
+from app.main import create_app
 
 ROOT = Path(__file__).resolve().parents[3]
 PASSWORD = "correct-horse-battery"
@@ -135,3 +135,8 @@ def login(client, world):
         return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
     return _login
+
+
+@pytest.fixture
+def connect():
+    return _connect
