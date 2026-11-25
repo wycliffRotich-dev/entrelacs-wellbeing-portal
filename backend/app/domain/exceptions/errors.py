@@ -7,3 +7,11 @@ class DomainError(Exception):
 
 class InvalidAnswerError(DomainError):
     """An answer is not an integer from 0 through 10."""
+
+
+class IncompleteCheckInError(DomainError):
+    """Submission requires all three answers."""
+
+
+class CheckInAlreadySubmittedError(DomainError):
+    """A submitted check-in is immutable and cannot be changed or submitted again."""
