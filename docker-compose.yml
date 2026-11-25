@@ -1,3 +1,24 @@
+x-backend: &backend
+  build: ./backend
+  image: wellbeing-backend:dev
+  # Runs as the host user by default so the 0600 secret files stay readable. Override with APP_UID and APP_GID.
+  user: "${APP_UID:-1000}:${APP_GID:-1000}"
+  environment:
+    DB_HOST: db
+    DB_PORT: "5432"
+    DB_NAME: wellbeing
+    DB_USER: wellbeing
+    DB_PASSWORD_FILE: /run/secrets/postgres_password
+    JWT_SECRET_FILE: /run/secrets/jwt_secret
+  secrets:
+    - postgres_password
+    - jwt_secret
+  read_only: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
 services:
   db:
     image: postgres:16-alpine@sha256:f2f98726820d0342055351c6e9d36e705f5bfffb3dd53ff556325114b08afb6d
@@ -10,17 +31,50 @@ services:
       - postgres_password
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Applied once, when the data volume is empty. Reset with: docker compose down -v
+      - ./backend/app/infrastructure/persistence/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     ports:
       - "127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wellbeing -d wellbeing"]
+      # -h forces TCP, so it only passes on the final server and not on the temporary init server
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U wellbeing -d wellbeing"]
       interval: 5s
       timeout: 3s
       retries: 10
 
+  seed:
+    <<: *backend
+    command: ["python", "-m", "app.seed"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    <<: *backend
+    restart: unless-stopped
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  frontend:
+    build: ./frontend
+    image: wellbeing-frontend:dev
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
+
 secrets:
   postgres_password:
     file: ${POSTGRES_PASSWORD_FILE_PATH:-./secrets/postgres_password}
+  jwt_secret:
+    file: ${JWT_SECRET_FILE_PATH:-./secrets/jwt_secret}
 
 volumes:
   pgdata:
