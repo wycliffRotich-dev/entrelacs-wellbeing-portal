@@ -41,7 +41,7 @@ test("an employee signs in and lands on the check-in screen", async () => {
   expect(getToken()).toBe("tok-1");
 });
 
-test("wrong credentials show one generic error and keep the user on the form", async () => {
+test("wrong credentials show one error message and keep the user on the form", async () => {
   const fetchFn = fakeFetch({ "POST /api/auth/login": () => json(401, INVALID) });
   const user = userEvent.setup();
   render(<App fetchFn={fetchFn} />);
