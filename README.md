@@ -75,7 +75,7 @@ HR users see the organization overview and can filter by team:
 | `GET /api/hr/wellbeing?team_id=` | HR | aggregate for the organization or one team |
 | `GET /api/hr/teams` | HR | team list for the filter |
 
-Every error uses one envelope: `{"error": {"code", "message", "details"}}`.
+Every error uses one envelope: `{"error": {"code", "message"}}`. Validation errors (422, code `validation_error`) add `details`, a list of `{"field", "message"}` objects.
 
 ## How access is enforced
 
