@@ -1,5 +1,4 @@
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from uuid import uuid4
 
 import psycopg
@@ -11,8 +10,8 @@ from app.domain.check_ins.score import calculate_score
 from app.infrastructure.security.passwords import hash_password
 from app.infrastructure.security.tokens import TokenService
 from app.main import create_app
+from tests.db_settings import connect_kwargs
 
-ROOT = Path(__file__).resolve().parents[3]
 PASSWORD = "correct-horse-battery"
 SECRET = "t" * 64
 FIXED_NOW = datetime(2026, 10, 15, 12, 0, tzinfo=UTC)
@@ -22,11 +21,7 @@ _PASSWORD_HASH = hash_password(PASSWORD)
 
 
 def _connect():
-    password = (ROOT / "secrets" / "postgres_password").read_text(encoding="utf-8").strip()
-    return psycopg.connect(
-        host="127.0.0.1", port=5433, dbname="wellbeing_test", user="wellbeing",
-        password=password, row_factory=dict_row,
-    )
+    return psycopg.connect(**connect_kwargs("wellbeing_test"), row_factory=dict_row)
 
 
 class World:

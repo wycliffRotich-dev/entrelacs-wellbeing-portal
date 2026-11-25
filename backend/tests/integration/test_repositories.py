@@ -1,6 +1,5 @@
 from datetime import UTC, datetime
 from decimal import Decimal
-from pathlib import Path
 from uuid import uuid4
 
 import psycopg
@@ -10,19 +9,15 @@ from psycopg.rows import dict_row
 from app.domain.check_ins.check_in import CheckIn, CheckInStatus
 from app.domain.exceptions.errors import CheckInAlreadySubmittedError
 from app.infrastructure.persistence.repositories import PostgresRepository
+from tests.db_settings import connect_kwargs
 
-ROOT = Path(__file__).resolve().parents[3]
 T0 = datetime(2026, 10, 5, 9, 0, tzinfo=UTC)
 T1 = datetime(2026, 10, 6, 9, 0, tzinfo=UTC)
 
 
 @pytest.fixture
 def conn():
-    password = (ROOT / "secrets" / "postgres_password").read_text(encoding="utf-8").strip()
-    c = psycopg.connect(
-        host="127.0.0.1", port=5433, dbname="wellbeing_test", user="wellbeing",
-        password=password, row_factory=dict_row,
-    )
+    c = psycopg.connect(**connect_kwargs("wellbeing_test"), row_factory=dict_row)
     try:
         yield c
     finally:

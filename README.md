@@ -107,6 +107,7 @@ ruff check . && mypy app tests
 ```
 
 - `pytest tests/unit` needs no database.
+- The database tests read `TEST_DB_PORT` (default 5433), `TEST_DB_HOST` (default 127.0.0.1) and `TEST_DB_PASSWORD_FILE` (default `secrets/postgres_password`). If you changed `POSTGRES_HOST_PORT`, run the tests with the same value in `TEST_DB_PORT`.
 - The first run of the API and integration tests creates a `wellbeing_test` database in the same Postgres and loads the schema into it. The tests never touch the `wellbeing` demo database. After a schema change, run `docker compose exec db dropdb -U wellbeing wellbeing_test` once, and the next run rebuilds it.
 
 Frontend, which needs Node 20 or newer:

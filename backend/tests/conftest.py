@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Any
 
@@ -6,25 +5,16 @@ import psycopg
 import pytest
 from psycopg import sql
 
+from tests.db_settings import connect_kwargs
+
 BACKEND = Path(__file__).resolve().parents[1]
-ROOT = BACKEND.parent
 SCHEMA = BACKEND / "app" / "infrastructure" / "persistence" / "schema.sql"
 TEST_DB = "wellbeing_test"
 NEEDS_DATABASE = {"api", "integration"}
 
 
 def _connect(dbname: str) -> "psycopg.Connection[Any]":
-    password_file = Path(
-        os.environ.get("TEST_DB_PASSWORD_FILE", ROOT / "secrets" / "postgres_password")
-    )
-    return psycopg.connect(
-        host=os.environ.get("TEST_DB_HOST", "127.0.0.1"),
-        port=int(os.environ.get("TEST_DB_PORT", "5433")),
-        dbname=dbname,
-        user="wellbeing",
-        password=password_file.read_text(encoding="utf-8").strip(),
-        autocommit=True,
-    )
+    return psycopg.connect(**connect_kwargs(dbname), autocommit=True)
 
 
 def ensure_test_database() -> None:

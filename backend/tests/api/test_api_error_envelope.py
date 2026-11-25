@@ -1,7 +1,5 @@
 from uuid import uuid4
 
-from app.presentation.errors import _MAPPED  # noqa: F401  (import check: handlers exist)
-
 CURRENT = "/api/employee/check-ins/current"
 
 
